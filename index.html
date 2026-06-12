@@ -4,59 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Signal Watch</title>
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:#000;
-  color:#fff;
-  font-family:-apple-system;
-  overflow:hidden;
-}
-.container{
-  display:flex;
-  width:200vw; /* 2页 */
-  height:100vh;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-}
-.page{
-  width:100vw;
-  height:100vh;
-  flex-shrink:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  scroll-snap-align:start;
-}
-.symbol{
-  font-size:20px;
-  color:#888;
-  margin-bottom:6px;
-}
-.price{
-  font-size:36px;
-  font-weight:bold;
-}
-.sub{
-  font-size:12px;
-  margin-top:4px;
-  color:#aaa;
-}
-.signal{
-  font-size:14px;
-  margin-top:10px;
-}
+body{background:#000;color:#fff;font-family:-apple-system;overflow:hidden;}
+.container{display:flex;width:200vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;}
+.page{width:100vw;height:100vh;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;scroll-snap-align:start;}
+.symbol{font-size:20px;color:#888;margin-bottom:6px;}
+.price{font-size:36px;font-weight:bold;}
+.sub{font-size:12px;margin-top:4px;color:#aaa;}
+.signal{font-size:14px;margin-top:10px;}
 .green{color:#00ff88;}
 .red{color:#ff4d4f;}
 </style>
 </head>
-
 <body>
 
 <div class="container">
-
   <!-- BTC -->
   <div class="page">
     <div class="symbol">BTC</div>
@@ -74,7 +37,6 @@ body{
     <div class="sub" id="xaut-range"></div>
     <div class="signal" id="xaut-signal">Signal: --</div>
   </div>
-
 </div>
 
 <script>
@@ -86,8 +48,7 @@ function paintChange(id, value){
 }
 
 function paintRange(id, high, low){
-  document.getElementById(id).innerText =
-    `H: ${high}  L: ${low}`;
+  document.getElementById(id).innerText = `H: ${high}  L: ${low}`;
 }
 
 function paintSignal(id, change){
