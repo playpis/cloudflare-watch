@@ -3,95 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Watch</title>
-
+<title>BTC + XAUT Watch</title>
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-body{
-  background:#000;
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  overflow:hidden;
-}
-
-.container{
-  display:flex;
-  width:200vw;
-  height:100vh;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-}
-
-.page{
-  width:100vw;
-  height:100vh;
-  flex-shrink:0;
-
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-
-  scroll-snap-align:start;
-}
-
-.symbol{
-  color:#888;
-  font-size:20px;
-  margin-bottom:8px;
-}
-
-.price{
-  font-size:38px;
-  font-weight:700;
-}
-
-.change{
-  margin-top:8px;
-  font-size:16px;
-}
-
-.range{
-  margin-top:8px;
-  font-size:12px;
-  color:#888;
-}
-
-.signal{
-  margin-top:12px;
-  font-size:14px;
-}
-
-.green{
-  color:#00ff88;
-}
-
-.red{
-  color:#ff4d4f;
-}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden;}
+.container{display:flex;width:200vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;}
+.page{width:100vw;height:100vh;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;scroll-snap-align:start;}
+.symbol{color:#888;font-size:20px;margin-bottom:8px;}
+.price{font-size:38px;font-weight:700;}
+.change{margin-top:8px;font-size:16px;}
+.range{margin-top:8px;font-size:12px;color:#888;}
+.signal{margin-top:12px;font-size:14px;}
+.green{color:#00ff88;}
+.red{color:#ff4d4f;}
 </style>
 </head>
-
 <body>
 
 <div class="container">
 
+  <!-- BTC 页面 -->
   <div class="page">
     <div class="symbol">BTC</div>
-    <div class="price" id="btc">$--</div>
+    <div class="price" id="btc-price">$--</div>
     <div class="change" id="btc-change">--</div>
     <div class="range" id="btc-range">--</div>
     <div class="signal" id="btc-signal">--</div>
   </div>
 
+  <!-- XAUT 页面 -->
   <div class="page">
     <div class="symbol">XAUT</div>
-    <div class="price" id="xaut">$--</div>
+    <div class="price" id="xaut-price">$--</div>
     <div class="change" id="xaut-change">--</div>
     <div class="range" id="xaut-range">--</div>
     <div class="signal" id="xaut-signal">--</div>
@@ -100,109 +43,61 @@ body{
 </div>
 
 <script>
-
-function signal(change){
-
-  if(change > 1)
-    return "🟢 Risk-On";
-
-  if(change < -1)
-    return "🔴 Risk-Off";
-
-  return "⚪ Neutral";
-}
-
-function colorize(el,value){
-
-  el.className =
-    value >= 0
-    ? "change green"
-    : "change red";
-}
-
-async function load(){
-
-  try{
-
-    const r = await fetch(
-      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,tether-gold"
-    );
-
-    const data = await r.json();
-
-    const btc =
-      data.find(x => x.id==="bitcoin");
-
-    const xaut =
-      data.find(x => x.id==="tether-gold");
-
-    if(btc){
-
-      document.getElementById("btc")
-        .innerText =
-        "$"+btc.current_price.toLocaleString();
-
-      const c =
-        btc.price_change_percentage_24h || 0;
-
-      const el =
-        document.getElementById("btc-change");
-
-      el.innerText =
-        (c>=0?"+":"")+c.toFixed(2)+"%";
-
-      colorize(el,c);
-
-      document.getElementById("btc-range")
-        .innerText =
-        `H ${btc.high_24h} · L ${btc.low_24h}`;
-
-      document.getElementById("btc-signal")
-        .innerText =
-        signal(c);
-    }
-
-    if(xaut){
-
-      document.getElementById("xaut")
-        .innerText =
-        "$"+xaut.current_price.toFixed(2);
-
-      const c =
-        xaut.price_change_percentage_24h || 0;
-
-      const el =
-        document.getElementById("xaut-change");
-
-      el.innerText =
-        (c>=0?"+":"")+c.toFixed(2)+"%";
-
-      colorize(el,c);
-
-      document.getElementById("xaut-range")
-        .innerText =
-        `H ${xaut.high_24h} · L ${xaut.low_24h}`;
-
-      document.getElementById("xaut-signal")
-        .innerText =
-        signal(c);
-    }
-
-  }catch(e){
-
-    console.log(e);
-
-    document.getElementById("btc")
-      .innerText = "ERROR";
-
-    document.getElementById("xaut")
-      .innerText = "ERROR";
+function getSignal(asset, change){
+  if(asset==="btc"){
+    if(change>1) return "🚀 Bullish";
+    if(change<-1) return "⚠️ Weak";
+    return "😐 Sideways";
+  } else if(asset==="xaut"){
+    if(change>1) return "🛡️ Demand Rising";
+    if(change<-1) return "📉 Demand Falling";
+    return "😐 Stable";
   }
 }
 
-load();
+function colorize(el,value){
+  el.className = value>=0 ? "change green" : "change red";
+}
 
-setInterval(load,300000);
+async function loadData(){
+  try{
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,tether-gold"
+    );
+    const data = await res.json();
+
+    const btc = data.find(x=>x.id==="bitcoin");
+    const xaut = data.find(x=>x.id==="tether-gold");
+
+    if(btc){
+      document.getElementById("btc-price").innerText="$"+btc.current_price.toLocaleString();
+      const c = btc.price_change_percentage_24h || 0;
+      const el = document.getElementById("btc-change");
+      el.innerText=(c>=0?"+":"")+c.toFixed(2)+"%";
+      colorize(el,c);
+      document.getElementById("btc-range").innerText=`H ${btc.high_24h} · L ${btc.low_24h}`;
+      document.getElementById("btc-signal").innerText=getSignal("btc",c);
+    }
+
+    if(xaut){
+      document.getElementById("xaut-price").innerText="$"+xaut.current_price.toFixed(2);
+      const c = xaut.price_change_percentage_24h || 0;
+      const el = document.getElementById("xaut-change");
+      el.innerText=(c>=0?"+":"")+c.toFixed(2)+"%";
+      colorize(el,c);
+      document.getElementById("xaut-range").innerText=`H ${xaut.high_24h} · L ${xaut.low_24h}`;
+      document.getElementById("xaut-signal").innerText=getSignal("xaut",c);
+    }
+
+  }catch(e){
+    console.log(e);
+    document.getElementById("btc-price").innerText="ERROR";
+    document.getElementById("xaut-price").innerText="ERROR";
+  }
+}
+
+loadData();
+setInterval(loadData, 300000); // 每5分钟刷新
 
 </script>
 
