@@ -1,45 +1,49 @@
 export async function onRequest(context) {
 
   const cache = caches.default;
-  const key = new Request("https://cache.market");
-  let cached = await cache.match(key);
-  if(cached) return cached;
+  const cacheKey = new Request("https://cache.market");
+  let cached = await cache.match(cacheKey);
+  if (cached) return cached;
 
-  const result = {};
+  const result = {
+    btc: "--",
+    btc_change: 0,
+    btc_high: "--",
+    btc_low: "--",
+    xaut: "--",
+    xaut_change: 0,
+    xaut_high: "--",
+    xaut_low: "--"
+  };
 
-  try{
-    const crypto = await fetch(
-      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,tether-gold"
-    ).then(r=>r.json());
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,tether-gold&vs_currencies=usd&include_24hr_high_low=true&include_24hr_change=true"
+    );
+    const data = await res.json();
 
-    crypto.forEach(c=>{
-      if(c.id==="bitcoin"){
-        result.btc = c.current_price;
-        result.btc_change = c.price_change_percentage_24h;
-        result.btc_high = c.high_24h;
-        result.btc_low = c.low_24h;
-      }
-      if(c.id==="tether-gold"){
-        result.xaut = c.current_price;
-        result.xaut_change = c.price_change_percentage_24h;
-        result.xaut_high = c.high_24h;
-        result.xaut_low = c.low_24h;
-      }
-    });
+    result.btc = data.bitcoin?.usd ?? "--";
+    result.btc_change = data.bitcoin?.usd_24h_change ?? 0;
+    result.btc_high = data.bitcoin?.usd_24h_high ?? "--";
+    result.btc_low = data.bitcoin?.usd_24h_low ?? "--";
 
-  }catch{
-    result.btc="--"; result.btc_change=0; result.btc_high="--"; result.btc_low="--";
-    result.xaut="--"; result.xaut_change=0; result.xaut_high="--"; result.xaut_low="--";
+    result.xaut = data["tether-gold"]?.usd ?? "--";
+    result.xaut_change = data["tether-gold"]?.usd_24h_change ?? 0;
+    result.xaut_high = data["tether-gold"]?.usd_24h_high ?? "--";
+    result.xaut_low = data["tether-gold"]?.usd_24h_low ?? "--";
+
+  } catch(e){
+    console.log("CoinGecko fetch failed:", e);
   }
 
-  const response = new Response(
-    JSON.stringify(result),
-    { headers:{
-        "content-type":"application/json",
-        "cache-control":"public,max-age=300"
-      } }
-  );
+  const response = new Response(JSON.stringify(result), {
+    headers: {
+      "content-type": "application/json",
+      "cache-control": "public,max-age=300"
+    }
+  });
 
-  await cache.put(key, response.clone());
+  context.waitUntil(cache.put(cacheKey, response.clone()));
+
   return response;
-      }
+}
