@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signal Watch</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#000;
+  color:#fff;
+  font-family:-apple-system;
+  overflow:hidden;
+}
+.container{
+  display:flex;
+  width:200vw; /* 2页 */
+  height:100vh;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+}
+.page{
+  width:100vw;
+  height:100vh;
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  scroll-snap-align:start;
+}
+.symbol{
+  font-size:20px;
+  color:#888;
+  margin-bottom:6px;
+}
+.price{
+  font-size:36px;
+  font-weight:bold;
+}
+.sub{
+  font-size:12px;
+  margin-top:4px;
+  color:#aaa;
+}
+.signal{
+  font-size:14px;
+  margin-top:10px;
+}
+.green{color:#00ff88;}
+.red{color:#ff4d4f;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- BTC -->
+  <div class="page">
+    <div class="symbol">BTC</div>
+    <div class="price" id="btc">$--</div>
+    <div class="sub" id="btc-change"></div>
+    <div class="sub" id="btc-range"></div>
+    <div class="signal" id="btc-signal">Signal: --</div>
+  </div>
+
+  <!-- XAUT -->
+  <div class="page">
+    <div class="symbol">XAUT</div>
+    <div class="price" id="xaut">$--</div>
+    <div class="sub" id="xaut-change"></div>
+    <div class="sub" id="xaut-range"></div>
+    <div class="signal" id="xaut-signal">Signal: --</div>
+  </div>
+
+</div>
+
+<script>
+function paintChange(id, value){
+  const el = document.getElementById(id);
+  const n = Number(value);
+  el.innerText = (n>=0?"+":"") + n.toFixed(2) + "%";
+  el.className = "sub " + (n>=0?"green":"red");
+}
+
+function paintRange(id, high, low){
+  document.getElementById(id).innerText =
+    `H: ${high}  L: ${low}`;
+}
+
+function paintSignal(id, change){
+  const el = document.getElementById(id);
+  if(change>0.5) el.innerText="Signal: 🟢 Risk-On";
+  else if(change<-0.5) el.innerText="Signal: 🔴 Risk-Off";
+  else el.innerText="Signal: ⚪ Neutral";
+}
+
+async function load(){
+  try{
+    const r = await fetch("/api/market");
+    const d = await r.json();
+
+    // BTC
+    document.getElementById("btc").innerText="$"+d.btc;
+    paintChange("btc-change", d.btc_change);
+    paintRange("btc-range", d.btc_high, d.btc_low);
+    paintSignal("btc-signal", d.btc_change);
+
+    // XAUT
+    document.getElementById("xaut").innerText="$"+d.xaut;
+    paintChange("xaut-change", d.xaut_change);
+    paintRange("xaut-range", d.xaut_high, d.xaut_low);
+    paintSignal("xaut-signal", d.xaut_change);
+
+  }catch(e){
+    document.getElementById("btc").innerText="ERROR";
+    document.getElementById("xaut").innerText="ERROR";
+  }
+}
+
+load();
+setInterval(load, 300000);
+</script>
+
+</body>
+  </html>
