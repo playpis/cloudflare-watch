@@ -1,7 +1,8 @@
 export async function onRequest(context) {
-
   const cache = caches.default;
   const cacheKey = new Request("https://cache.market");
+
+  // 先查缓存
   let cached = await cache.match(cacheKey);
   if (cached) return cached;
 
@@ -17,33 +18,34 @@ export async function onRequest(context) {
   };
 
   try {
-    const res = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,tether-gold&vs_currencies=usd&include_24hr_high_low=true&include_24hr_change=true"
-    );
-    const data = await res.json();
+    // BTC：Binance
+    const btcRes = await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT");
+    const btc = await btcRes.json();
+    result.btc = btc.lastPrice ?? "--";
+    result.btc_change = parseFloat(btc.priceChangePercent) ?? 0;
+    result.btc_high = btc.highPrice ?? "--";
+    result.btc_low = btc.lowPrice ?? "--";
 
-    result.btc = data.bitcoin?.usd ?? "--";
-    result.btc_change = data.bitcoin?.usd_24h_change ?? 0;
-    result.btc_high = data.bitcoin?.usd_24h_high ?? "--";
-    result.btc_low = data.bitcoin?.usd_24h_low ?? "--";
-
-    result.xaut = data["tether-gold"]?.usd ?? "--";
-    result.xaut_change = data["tether-gold"]?.usd_24h_change ?? 0;
-    result.xaut_high = data["tether-gold"]?.usd_24h_high ?? "--";
-    result.xaut_low = data["tether-gold"]?.usd_24h_low ?? "--";
+    // XAUT：OKX 公共行情
+    const xautRes = await fetch("https://www.okx.com/api/v5/market/ticker?instId=XAUT-USD");
+    const xaut = await xautRes.json();
+    const x = xaut.data?.[0];
+    result.xaut = x?.last ?? "--";
+    result.xaut_change = parseFloat(x?.pctChg) ?? 0;
+    result.xaut_high = x?.high24h ?? "--";
+    result.xaut_low = x?.low24h ?? "--";
 
   } catch(e){
-    console.log("CoinGecko fetch failed:", e);
+    console.log("Fetch failed:", e);
   }
 
   const response = new Response(JSON.stringify(result), {
     headers: {
       "content-type": "application/json",
-      "cache-control": "public,max-age=300"
+      "cache-control": "public,max-age=300" // 缓存 5 分钟
     }
   });
 
   context.waitUntil(cache.put(cacheKey, response.clone()));
-
   return response;
-}
+      }
