@@ -24,6 +24,9 @@ h1{font-size:18px;font-weight:700;margin:8px 4px 16px;}
 .card .range{font-size:12px;color:var(--dim);margin-top:6px;}
 .card .signal{font-size:12px;margin-top:8px;padding:2px 8px;border-radius:4px;display:inline-block;background:#f0f2f5;color:#4a5568;}
 .sparkline{width:100%;height:40px;margin-top:12px;display:block;}
+.rsi{font-size:12px;margin-top:8px;padding:2px 8px;border-radius:4px;display:inline-block;background:#f0f2f5;color:#4a5568;}
+.rsi.rsi-high{background:#fde8e8;color:#c0392b;}
+.rsi.rsi-low{background:#e6f9ef;color:#1e8449;}
 .green{color:var(--green);}
 .red{color:var(--red);}
 
@@ -96,6 +99,48 @@ function sparkline(prices){
   </svg>`;
 }
 
+// RSI-14 (Wilder 平滑) — 传入收盘价数组
+function rsi14(closes, period=14){
+  if(!closes||closes.length<period+1)return null;
+  let gain=0,loss=0;
+  for(let i=1;i<=period;i++){
+    const d=closes[i]-closes[i-1];
+    if(d>=0)gain+=d;else loss-=d;
+  }
+  let avgG=gain/period,avgL=loss/period;
+  for(let i=period+1;i<closes.length;i++){
+    const d=closes[i]-closes[i-1];
+    avgG=(avgG*(period-1)+Math.max(d,0))/period;
+    avgL=(avgL*(period-1)+Math.max(-d,0))/period;
+  }
+  if(avgL===0)return 100;
+  const rs=avgG/avgL;
+  return 100-100/(1+rs);
+}
+
+// 加载 XMR RSI (Kraken 日线)
+async function loadXmrRsi(){
+  const el=document.getElementById('xmr-rsi');
+  if(!el)return;
+  try{
+    const res=await fetch('https://api.kraken.com/0/public/OHLC?pair=XMRUSD&interval=1440');
+    const d=await res.json();
+    const rows=Object.values(d.result||{})[0];
+    if(!rows||rows.length<16)throw new Error('no data');
+    const closes=rows.map(r=>+r[4]); // 收盘价
+    const rsi=rsi14(closes);
+    if(rsi===null)throw new Error('calc fail');
+    const val=rsi.toFixed(1);
+    let label='中性',cls='';
+    if(rsi>=70){label='超买';cls='rsi-high';}
+    else if(rsi<=30){label='超卖';cls='rsi-low';}
+    el.textContent=`RSI-14 ${val} · ${label}`;
+    el.className='rsi'+(cls?' '+cls:'');
+  }catch(e){
+    el.textContent='RSI --';
+  }
+}
+
 async function loadPrices(){
   const grid=document.getElementById('grid');
   try{
@@ -112,11 +157,13 @@ async function loadPrices(){
         <div class="change ${cls}">${sign}${ch.toFixed(2)}% (24h)</div>
         <div class="range">H $${Number(c.high_24h||0).toLocaleString()} · L $${Number(c.low_24h||0).toLocaleString()}</div>
         <div class="signal">${sig}</div>
+        ${c.symbol.toUpperCase()==='XMR'?'<div class="rsi" id="xmr-rsi">RSI --</div>':''}
         ${sparkline(c.sparkline_in_7d?.price)}
       </div>`;
     }).join('');
     const news=`<div class="card news-card" id="news"><h3>加密新闻</h3><div class="loading">加载中...</div></div>`;
     grid.innerHTML=cards+news;
+    loadXmrRsi();
     loadNews();
   }catch(e){
     grid.innerHTML='<div class="loading error">价格加载失败: '+esc(e.message)+'</div>';
