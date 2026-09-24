@@ -131,9 +131,9 @@ async function loadXmrRsi(){
     const rsi=rsi14(closes);
     if(rsi===null)throw new Error('calc fail');
     const val=rsi.toFixed(1);
-    let label='中性',cls='';
-    if(rsi>=70){label='超买';cls='rsi-high';}
-    else if(rsi<=30){label='超卖';cls='rsi-low';}
+    let label='Neutral',cls='';
+    if(rsi>=70){label='Overbought';cls='rsi-high';}
+    else if(rsi<=30){label='Oversold';cls='rsi-low';}
     el.textContent=`RSI-14 ${val} · ${label}`;
     el.className='rsi'+(cls?' '+cls:'');
   }catch(e){
