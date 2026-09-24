@@ -1,105 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BTC + XAUT Watch</title>
+<title>Dashboard</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden;}
-.container{display:flex;width:200vw;height:100vh;overflow-x:auto;scroll-snap-type:x mandatory;}
-.page{width:100vw;height:100vh;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;align-items:center;scroll-snap-align:start;}
-.symbol{color:#888;font-size:20px;margin-bottom:8px;}
-.price{font-size:38px;font-weight:700;}
-.change{margin-top:8px;font-size:16px;}
-.range{margin-top:8px;font-size:12px;color:#888;}
-.signal{margin-top:12px;font-size:14px;}
-.green{color:#00ff88;}
-.red{color:#ff4d4f;}
+:root{--bg:#0a0a0a;--card:#141414;--border:#222;--text:#e0e0e0;--dim:#666;--green:#00ff88;--red:#ff4d4f;--accent:#4488ff;--yellow:#ffd700;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow:hidden;}
+
+/* Tab bar */
+.tabs{display:flex;height:48px;background:#111;border-bottom:1px solid var(--border);position:fixed;top:0;width:100%;z-index:100;}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--dim);border-bottom:2px solid transparent;transition:.2s;user-select:none;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+
+/* Panels */
+.panel{display:none;height:calc(100vh - 48px);overflow-y:auto;padding-top:48px;}
+.panel.active{display:block;}
+
+/* Price grid */
+.price-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;padding:16px;}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;}
+.price-card .symbol{font-size:14px;color:var(--dim);letter-spacing:1px;}
+.price-card .price{font-size:32px;font-weight:700;margin:8px 0;}
+.price-card .change{font-size:14px;}
+.price-card .range{font-size:12px;color:var(--dim);margin-top:6px;}
+.price-card .signal{font-size:13px;margin-top:8px;padding:2px 8px;border-radius:4px;display:inline-block;}
+.green{color:var(--green);}
+.red{color:var(--red);}
+
+/* Kanban */
+.kanban{display:flex;gap:16px;padding:16px;height:calc(100vh - 48px);overflow-x:auto;}
+.kanban-col{flex:1;min-width:260px;background:var(--card);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;}
+.kanban-col h3{font-size:13px;color:var(--dim);padding:12px 16px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:1px;}
+.kanban-col .count{font-size:12px;color:var(--dim);margin-left:6px;}
+.kanban-items{flex:1;padding:8px;overflow-y:auto;min-height:100px;}
+.kanban-item{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;margin:6px 0;cursor:grab;font-size:13px;line-height:1.5;word-break:break-word;}
+.kanban-item:active{cursor:grabbing;opacity:.7;}
+.kanban-item.dragging{border-color:var(--accent);}
+.kanban-item .del{float:right;color:var(--dim);cursor:pointer;font-size:16px;line-height:1;opacity:0;transition:.2s;}
+.kanban-item:hover .del{opacity:1;}
+.kanban-item .del:hover{color:var(--red);}
+.kanban-add{padding:8px;}
+.kanban-add input{width:100%;background:#111;border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;}
+.kanban-add input:focus{border-color:var(--accent);}
+
+/* Info */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;padding:16px;}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.info-card h3{font-size:13px;color:var(--dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
+.info-item{padding:8px 0;border-bottom:1px solid #1a1a1a;}
+.info-item:last-child{border-bottom:none;}
+.info-item a{color:var(--text);text-decoration:none;font-size:13px;line-height:1.5;}
+.info-item a:hover{color:var(--accent);}
+.info-item .source{font-size:11px;color:var(--dim);margin-top:2px;}
+.info-item .time{font-size:11px;color:var(--dim);}
+.quick-links{display:flex;flex-wrap:wrap;gap:8px;}
+.quick-links a{background:#1a1a1a;border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text);text-decoration:none;transition:.2s;}
+.quick-links a:hover{border-color:var(--accent);color:var(--accent);}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--dim);font-size:14px;}
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="tabs">
+  <div class="tab active" onclick="showPanel('prices')">价格</div>
+  <div class="tab" onclick="showPanel('tasks')">任务</div>
+  <div class="tab" onclick="showPanel('info')">信息</div>
+</div>
 
-  <!-- BTC 页面 -->
-  <div class="page">
-    <div class="symbol">BTC</div>
-    <div class="price" id="btc-price">$--</div>
-    <div class="change" id="btc-change">--</div>
-    <div class="range" id="btc-range">--</div>
-    <div class="signal" id="btc-signal">--</div>
+<!-- ========== 价格面板 ========== -->
+<div id="prices" class="panel active">
+  <div class="price-grid" id="price-grid">
+    <div class="loading">加载价格中...</div>
   </div>
+</div>
 
-  <!-- XAUT 页面 -->
-  <div class="page">
-    <div class="symbol">XAUT</div>
-    <div class="price" id="xaut-price">$--</div>
-    <div class="change" id="xaut-change">--</div>
-    <div class="range" id="xaut-range">--</div>
-    <div class="signal" id="xaut-signal">--</div>
+<!-- ========== 任务面板 ========== -->
+<div id="tasks" class="panel">
+  <div class="kanban" id="kanban">
+    <div class="kanban-col">
+      <h3>待办 <span class="count" id="count-todo"></span></h3>
+      <div class="kanban-items" id="items-todo" ondrop="dropItem(event,'todo')" ondragover="allowDrop(event)"></div>
+      <div class="kanban-add"><input type="text" placeholder="+ 添加任务..." onkeydown="addItem(event,'todo')"></div>
+    </div>
+    <div class="kanban-col">
+      <h3>进行中 <span class="count" id="count-doing"></span></h3>
+      <div class="kanban-items" id="items-doing" ondrop="dropItem(event,'doing')" ondragover="allowDrop(event)"></div>
+      <div class="kanban-add"><input type="text" placeholder="+ 添加任务..." onkeydown="addItem(event,'doing')"></div>
+    </div>
+    <div class="kanban-col">
+      <h3>已完成 <span class="count" id="count-done"></span></h3>
+      <div class="kanban-items" id="items-done" ondrop="dropItem(event,'done')" ondragover="allowDrop(event)"></div>
+      <div class="kanban-add"><input type="text" placeholder="+ 添加任务..." onkeydown="addItem(event,'done')"></div>
+    </div>
   </div>
+</div>
 
+<!-- ========== 信息面板 ========== -->
+<div id="info" class="panel">
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>快捷链接</h3>
+      <div class="quick-links">
+        <a href="https://spliit.app/groups/MRyNX4lYLA3hAYc45R_0X/expenses" target="_blank">记账</a>
+        <a href="https://kraken.com" target="_blank">Kraken</a>
+        <a href="https://www.coingecko.com" target="_blank">CoinGecko</a>
+        <a href="https://relay.play-b56.workers.dev/https://api.github.com" target="_blank">Relay</a>
+      </div>
+    </div>
+    <div class="info-card" id="news-card">
+      <h3>加密新闻</h3>
+      <div class="loading">加载新闻中...</div>
+    </div>
+    <div class="info-card" id="memos-card" style="display:none">
+      <h3>最近 Memos</h3>
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
 </div>
 
 <script>
-function getSignal(asset, change){
-  if(asset==="btc"){
-    if(change>1) return "🚀 Bullish";
-    if(change<-1) return "⚠️ Weak";
-    return "😐 Sideways";
-  } else if(asset==="xaut"){
-    if(change>1) return "🛡️ Demand Rising";
-    if(change<-1) return "📉 Demand Falling";
-    return "😐 Stable";
+// ========== Tab 切换 ==========
+function showPanel(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+// ========== 价格面板 ==========
+const ASSETS=[
+  {id:'bitcoin',name:'BTC',icon:'₿'},
+  {id:'ethereum',name:'ETH',icon:'Ξ'},
+  {id:'monero',name:'XMR',icon:'ɱ'},
+  {id:'tether-gold',name:'XAUT',icon:'🥇'},
+];
+
+function getSignal(name,change){
+  if(name==='BTC'){
+    if(change>3)return'🚀 强势';if(change<-3)return'⚠️ 弱势';return'😐 震荡';
   }
+  if(name==='ETH'){
+    if(change>3)return'🚀 强势';if(change<-3)return'⚠️ 弱势';return'😐 震荡';
+  }
+  if(name==='XMR'){
+    if(change>2)return'🟢 上涨';if(change<-2)return'🔴 下跌';return'⚪ 横盘';
+  }
+  if(name==='XAUT'){
+    if(change>1)return'🛡️ 需求升';if(change<-1)return'📉 需求降';return'😐 稳定';
+  }
+  return'';
 }
 
-function colorize(el,value){
-  el.className = value>=0 ? "change green" : "change red";
-}
-
-async function loadData(){
+async function loadPrices(){
+  const grid=document.getElementById('price-grid');
   try{
-    const res = await fetch(
-      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,tether-gold"
-    );
-    const data = await res.json();
-
-    const btc = data.find(x=>x.id==="bitcoin");
-    const xaut = data.find(x=>x.id==="tether-gold");
-
-    if(btc){
-      document.getElementById("btc-price").innerText="$"+btc.current_price.toLocaleString();
-      const c = btc.price_change_percentage_24h || 0;
-      const el = document.getElementById("btc-change");
-      el.innerText=(c>=0?"+":"")+c.toFixed(2)+"%";
-      colorize(el,c);
-      document.getElementById("btc-range").innerText=`H ${btc.high_24h} · L ${btc.low_24h}`;
-      document.getElementById("btc-signal").innerText=getSignal("btc",c);
-    }
-
-    if(xaut){
-      document.getElementById("xaut-price").innerText="$"+xaut.current_price.toFixed(2);
-      const c = xaut.price_change_percentage_24h || 0;
-      const el = document.getElementById("xaut-change");
-      el.innerText=(c>=0?"+":"")+c.toFixed(2)+"%";
-      colorize(el,c);
-      document.getElementById("xaut-range").innerText=`H ${xaut.high_24h} · L ${xaut.low_24h}`;
-      document.getElementById("xaut-signal").innerText=getSignal("xaut",c);
-    }
-
+    const res=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,monero,tether-gold&order=market_cap_desc');
+    const data=await res.json();
+    grid.innerHTML=data.map(c=>{
+      const ch=c.price_change_percentage_24h||0;
+      const cls=ch>=0?'green':'red';
+      const sign=ch>=0?'+':'';
+      const sig=getSignal(c.symbol,Math.abs(ch));
+      return `<div class="price-card">
+        <div class="symbol">${c.symbol.toUpperCase()} · ${c.name}</div>
+        <div class="price">$${c.current_price.toLocaleString()}</div>
+        <div class="change ${cls}">${sign}${ch.toFixed(2)}% (24h)</div>
+        <div class="range">H $${c.high_24h?.toLocaleString()||'--'} · L $${c.low_24h?.toLocaleString()||'--'}</div>
+        <div class="signal">${sig}</div>
+      </div>`;
+    }).join('');
   }catch(e){
-    console.log(e);
-    document.getElementById("btc-price").innerText="ERROR";
-    document.getElementById("xaut-price").innerText="ERROR";
+    grid.innerHTML='<div class="loading">价格加载失败: '+e.message+'</div>';
   }
 }
+loadPrices();
+setInterval(loadPrices,60000);
 
-loadData();
-setInterval(loadData, 300000); // 每5分钟刷新
+// ========== 任务看板 ==========
+let tasks=JSON.parse(localStorage.getItem('kanban-tasks')||'{"todo":[],"doing":[],"done":[]}');
 
+function saveTasks(){localStorage.setItem('kanban-tasks',JSON.stringify(tasks));}
+
+function renderTasks(){
+  ['todo','doing','done'].forEach(col=>{
+    const el=document.getElementById('items-'+col);
+    el.innerHTML=tasks[col].map((t,i)=>`
+      <div class="kanban-item" draggable="true"
+           ondragstart="dragStart(event,'${col}',${i})"
+           ondragend="dragEnd(event)">
+        <span class="del" onclick="deleteItem('${col}',${i})">×</span>
+        ${escapeHtml(t)}
+      </div>`).join('');
+    document.getElementById('count-'+col).textContent='('+tasks[col].length+')';
+  });
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function addItem(e,col){
+  if(e.key!=='Enter')return;
+  const v=e.target.value.trim();
+  if(!v)return;
+  tasks[col].push(v);
+  e.target.value='';
+  saveTasks();renderTasks();
+}
+
+function deleteItem(col,i){
+  tasks[col].splice(i,1);
+  saveTasks();renderTasks();
+}
+
+let dragData={col:null,idx:null};
+function dragStart(e,col,i){dragData={col,idx:i};e.target.classList.add('dragging');}
+function dragEnd(e){e.target.classList.remove('dragging');}
+function allowDrop(e){e.preventDefault();}
+function dropItem(e,targetCol){
+  e.preventDefault();
+  if(dragData.col===null)return;
+  const item=tasks[dragData.col].splice(dragData.idx,1)[0];
+  tasks[targetCol].push(item);
+  dragData={col:null,idx:null};
+  saveTasks();renderTasks();
+}
+renderTasks();
+
+// ========== 信息面板 ==========
+async function loadNews(){
+  const card=document.getElementById('news-card');
+  try{
+    // CoinDesk RSS via rss2json (free, CORS-friendly)
+    const res=await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/');
+    const data=await res.json();
+    if(data.status!=='ok')throw new Error('RSS error');
+    const items=data.items.slice(0,8);
+    card.innerHTML='<h3>加密新闻 (CoinDesk)</h3>'+
+      items.map(it=>`
+        <div class="info-item">
+          <a href="${it.link}" target="_blank">${escapeHtml(it.title)}</a>
+          <div class="time">${it.pubDate?new Date(it.pubDate).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}</div>
+        </div>`).join('');
+  }catch(e){
+    // Fallback: CoinTelegraph
+    try{
+      const res2=await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss');
+      const data2=await res2.json();
+      const items=data2.items.slice(0,8);
+      card.innerHTML='<h3>加密新闻 (CoinTelegraph)</h3>'+
+        items.map(it=>`
+          <div class="info-item">
+            <a href="${it.link}" target="_blank">${escapeHtml(it.title)}</a>
+            <div class="time">${it.pubDate?new Date(it.pubDate).toLocaleString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):''}</div>
+          </div>`).join('');
+    }catch(e2){
+      card.innerHTML='<h3>加密新闻</h3><div class="loading">加载失败</div>';
+    }
+  }
+}
+loadNews();
+setInterval(loadNews,300000);
 </script>
-
 </body>
 </html>
