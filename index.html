@@ -41,7 +41,7 @@ h1{font-size:18px;font-weight:700;margin:8px 4px 16px;}
 </head>
 <body>
 <div class="container">
-  <h1>📊 Watch</h1>
+  <h1>Crypto</h1>
   <div class="grid" id="grid">
     <div class="loading">加载中...</div>
   </div>
@@ -52,11 +52,16 @@ h1{font-size:18px;font-weight:700;margin:8px 4px 16px;}
 const ASSETS=[
   {id:'bitcoin',name:'BTC'},
   {id:'ethereum',name:'ETH'},
+  {id:'binancecoin',name:'BNB'},
+  {id:'solana',name:'SOL'},
   {id:'monero',name:'XMR'},
   {id:'tether-gold',name:'XAUT'},
 ];
 
 function getSignal(name,ch){
+  if(name==='BNB'||name==='SOL'){
+    if(ch>3)return'🚀 强势';if(ch<-3)return'⚠️ 弱势';return'😐 震荡';
+  }
   if(name==='BTC'||name==='ETH'){
     if(ch>3)return'🚀 强势';if(ch<-3)return'⚠️ 弱势';return'😐 震荡';
   }
@@ -74,7 +79,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 async function loadPrices(){
   const grid=document.getElementById('grid');
   try{
-    const res=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,monero,tether-gold&order=market_cap_desc');
+    const res=await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,binancecoin,solana,monero,tether-gold&order=market_cap_desc');
     const data=await res.json();
     const cards=data.map(c=>{
       const ch=c.price_change_percentage_24h||0;
